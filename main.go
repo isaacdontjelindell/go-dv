@@ -4,6 +4,7 @@ import (
     "fmt"
     "os"
     "net"
+    "time"
 )
 
 type Node struct {
@@ -64,6 +65,8 @@ func main() {
 
     go acceptUpdates(quit, updateChan)
 
+    go testClient() // TODO remove
+
     <-quit // blocks
 }
 
@@ -86,7 +89,7 @@ func acceptUpdates(quit chan int, updateChan chan []Update) {
     LISTEN_IP := net.ParseIP("127.0.0.1")
     LISTEN_PORT := 1337
 
-    listenAddr := net.UDPAddr{LISTEN_IP, LISTEN_PORT, "IDK"}
+    listenAddr := net.UDPAddr{LISTEN_IP, LISTEN_PORT, ""}
     listener, err := net.ListenUDP("udp", &listenAddr)
     if err != nil {
         fmt.Println("[acceptUpdates] error starting update listener!", err.Error())
@@ -98,14 +101,31 @@ func acceptUpdates(quit chan int, updateChan chan []Update) {
         data := make([]byte, 2048)
         _, from, err := listener.ReadFromUDP(data) //first param is number of bytes recieved
         if err != nil {
-            fmt.Println("[acceptUpdates] Error accepting connection!")
+            fmt.Println("[acceptUpdates] Error accepting connection!", err.Error())
             return
         }
         fmt.Println("[acceptUpdates] recieved an update...", "FROM:", from)
         fmt.Println(string(data))
+        // TODO process data
     }
 
     quit <- -1
 }
 
+
+func testClient() {
+
+    conn, err := net.Dial("udp",  "127.0.0.1:1337")
+    if err != nil {
+        fmt.Println("Test client broke", err.Error())
+    }
+    for {
+        msg := []byte("test message")
+        _, err = conn.Write(msg)
+        if err != nil {
+            fmt.Println(err.Error())
+        }
+        time.Sleep(time.Second * 2)
+    }
+}
 
