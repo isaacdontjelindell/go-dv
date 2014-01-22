@@ -2,7 +2,8 @@ package main
 
 import (
     "fmt"
-    "time"
+    "os"
+    "net"
 )
 
 type Node struct {
@@ -79,10 +80,29 @@ func maintainRoutingTable(quit chan int, updateChan chan []Update, initialTable 
 }
 
 func acceptUpdates(quit chan int, updateChan chan []Update) {
+    fmt.Println("[acceptUpdates] starting listener")
+
     // accept updates and pass them to maintainRoutingTable
+    LISTEN_IP := net.ParseIP("127.0.0.1")
+    LISTEN_PORT := 1337
+
+    listenAddr := net.UDPAddr{LISTEN_IP, LISTEN_PORT, "IDK"}
+    listener, err := net.ListenUDP("udp", &listenAddr)
+    if err != nil {
+        fmt.Println("[acceptUpdates] error starting update listener!", err.Error())
+        os.Exit(1)
+    }
+
+
     for {
-        time.Sleep(time.Second)
-        fmt.Println("[acceptUpdates] recieved an update ")
+        data := make([]byte, 2048)
+        _, from, err := listener.ReadFromUDP(data) //first param is number of bytes recieved
+        if err != nil {
+            fmt.Println("[acceptUpdates] Error accepting connection!")
+            return
+        }
+        fmt.Println("[acceptUpdates] recieved an update...", "FROM:", from)
+        fmt.Println(string(data))
     }
 
     quit <- -1
