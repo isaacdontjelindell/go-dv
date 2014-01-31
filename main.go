@@ -5,6 +5,7 @@ import (
     "os"
     "net"
     "time"
+    "strconv"
 )
 
 type Node struct {
@@ -13,56 +14,50 @@ type Node struct {
     totalCost int // int cost + (cost to route)
 }
 
-func updateNodeRoute(n Node, route string) Node {
-    n.route = route
-    return n
-}
-
-func updateNodeCost(n Node, cost int) Node {
-    n.totalCost = cost
-    return n
-}
-
-
 type Update struct {
     routingTable []Node
     from string
 }
 
-
 func main() {
     // get this station name and neighbor/cost
-    print("Enter this station name: ")
+    /*print("Enter this station name: ")
     var station string
     fmt.Scanf("%s", &station)
     println("")
+    */
+    configLines, err := readLines("conf.ini")
+    if err != nil {
+        fmt.Println("Error reading config file", err.Error())
+        os.Exit(1)
+    }
+    station := configLines[0]
+    fmt.Println("Station:", station)
 
     neighbors := make([]Node, 0)
-    for i := 0; i < 3; i++ {
-        print("Enter the neighbor's name: ")
-        var name string
-        fmt.Scanf("%s", &name)
+    for i := 1; i < 7; i+=2 {
+        name := configLines[i]
+        costStr := configLines[i+1]
 
-        print("Enter the cost: ")
-        var cost int
-        fmt.Scanf("%d", &cost)
+        cost, err := strconv.ParseInt(costStr, 0, 0)
+        if err != nil {
+            fmt.Println("Error converting cost to int.", err.Error())
+        }
 
-        n := Node{name, "", cost}
+        fmt.Printf("Neighbor: %s, Cost: %d\n", name, int(cost))
+
+        n := Node{name, "", int(cost)}
 
         neighbors = append(neighbors, n)
     }
     println("")
 
-    println("Station:", station)
-    println("Neighbors:", neighbors)
-
-
     // set up the threads
     quit := make(chan int)
 
     updateChan := make(chan []Update)
-    go maintainRoutingTable(quit, updateChan, neighbors)
 
+    go maintainRoutingTable(quit, updateChan, neighbors)
     go acceptUpdates(quit, updateChan)
 
     go testClient() // TODO remove
