@@ -31,22 +31,33 @@ func main() {
         fmt.Println("Error reading config file", err.Error())
         os.Exit(1)
     }
+
     station := configLines[0]
     fmt.Println("Station:", station)
 
+    neighborCountStr := configLines[1]
+    neighborCount, err := strconv.Atoi(neighborCountStr)
+    if err != nil {
+        fmt.Println("Error converting neighborCost to int.", err.Error())
+        os.Exit(1)
+    }
+    fmt.Println("neighborCount:", neighborCount)
+
+
     neighbors := make([]Node, 0)
-    for i := 1; i < 7; i+=2 {
+    for i := 2; i<neighborCount*2 + 1; i+=2 {
         name := configLines[i]
         costStr := configLines[i+1]
 
-        cost, err := strconv.ParseInt(costStr, 0, 0)
+        cost, err := strconv.Atoi(costStr)
         if err != nil {
             fmt.Println("Error converting cost to int.", err.Error())
+            os.Exit(1)
         }
 
-        fmt.Printf("Neighbor: %s, Cost: %d\n", name, int(cost))
+        fmt.Printf("Neighbor: %s, Cost: %d\n", name, cost)
 
-        n := Node{name, "", int(cost)}
+        n := Node{name, "", cost}
 
         neighbors = append(neighbors, n)
     }
