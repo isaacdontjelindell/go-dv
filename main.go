@@ -104,7 +104,7 @@ func acceptUpdates(quit chan int, updateChan chan []Update) {
             fmt.Println("[acceptUpdates] error unmarshaling struct from JSON!", err.Error())
             os.Exit(1)
         }
-        // TODO process update
+        fmt.Println(update)
     }
 
     quit <- -1
@@ -130,7 +130,6 @@ func testClient() {
         }
 
         conn.Write(u)
-
     }
 }
 
