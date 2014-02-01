@@ -51,7 +51,7 @@ func main() {
     // set up the threads
     quit := make(chan int)
 
-    updateChan := make(chan []Update)
+    updateChan := make(chan Update)
 
     go maintainRoutingTable(quit, updateChan, neighbors)
     go acceptUpdates(quit, updateChan)
@@ -61,19 +61,20 @@ func main() {
     <-quit // blocks
 }
 
-func maintainRoutingTable(quit chan int, updateChan chan []Update, initialTable []Node) {
+func maintainRoutingTable(quit chan int, updateChan chan Update, initialTable []Node) {
     routingTable := make([]Node, 0)
     routingTable = append(routingTable, initialTable...)
 
     for {
         update := <-updateChan
-        fmt.Println("[maintainRoutingTable] processing an update...", update)
+        fmt.Println("[maintainRoutingTable] processing an update...")
+        fmt.Println(update)
     }
 
     quit <- -1
 }
 
-func acceptUpdates(quit chan int, updateChan chan []Update) {
+func acceptUpdates(quit chan int, updateChan chan Update) {
     fmt.Println("[acceptUpdates] starting listener")
 
     // accept updates and pass them to maintainRoutingTable
@@ -104,7 +105,8 @@ func acceptUpdates(quit chan int, updateChan chan []Update) {
             fmt.Println("[acceptUpdates] error unmarshaling struct from JSON!", err.Error())
             os.Exit(1)
         }
-        fmt.Println(update)
+
+        updateChan <- update
     }
 
     quit <- -1
@@ -121,7 +123,7 @@ func testClient() {
         time.Sleep(time.Second * 2)
 
         // build a test update struct
-        testRoutingTable := []Node{Node{"t1", "yoda", 3}, Node{"t2", "yoda", 5}}
+        testRoutingTable := []Node{Node{"t1", "yoda", 3}, Node{"t2", "yoda", 5}, Node{"t3", "yoda", 7}}
         update := Update{testRoutingTable, "yoda"}
 
         u, err := json.Marshal(update)  // u is []byte
