@@ -6,15 +6,11 @@ import (
     "net"
     "time"
     "strconv"
+    "encoding/json"
 )
 
 func main() {
     // get this station name and neighbor/cost
-    /*print("Enter this station name: ")
-    var station string
-    fmt.Scanf("%s", &station)
-    println("")
-    */
     configLines, err := readLines("conf.ini")
     if err != nil {
         fmt.Println("Error reading config file", err.Error())
@@ -91,17 +87,24 @@ func acceptUpdates(quit chan int, updateChan chan []Update) {
         os.Exit(1)
     }
 
-
     for {
         data := make([]byte, 2048)
-        _, from, err := listener.ReadFromUDP(data) //first param is number of bytes recieved
+        n, from, err := listener.ReadFromUDP(data) //first param is number of bytes recieved
         if err != nil {
             fmt.Println("[acceptUpdates] Error accepting connection!", err.Error())
             return
         }
-        fmt.Println("[acceptUpdates] recieved an update...", "FROM:", from)
-        fmt.Println(string(data))
-        // TODO process data
+
+        fmt.Println("[acceptUpdates] recieved a packet from", from)
+
+        // unmarshal update struct from data
+        var update Update
+        err = json.Unmarshal(data[:n], &update)
+        if err != nil {
+            fmt.Println("[acceptUpdates] error unmarshaling struct from JSON!", err.Error())
+            os.Exit(1)
+        }
+        // TODO process update
     }
 
     quit <- -1
@@ -109,18 +112,25 @@ func acceptUpdates(quit chan int, updateChan chan []Update) {
 
 
 func testClient() {
-
     conn, err := net.Dial("udp",  "127.0.0.1:1337")
     if err != nil {
-        fmt.Println("Test client broke", err.Error())
+        fmt.Println("[testClient] Error dialing connection.", err.Error())
     }
+
     for {
-        msg := []byte("test message")
-        _, err = conn.Write(msg)
-        if err != nil {
-            fmt.Println(err.Error())
-        }
         time.Sleep(time.Second * 2)
+
+        // build a test update struct
+        testRoutingTable := []Node{Node{"t1", "yoda", 3}, Node{"t2", "yoda", 5}}
+        update := Update{testRoutingTable, "yoda"}
+
+        u, err := json.Marshal(update)  // u is []byte
+        if err != nil {
+            fmt.Println("[testClient] error marshaling update to JSON", err.Error())
+        }
+
+        conn.Write(u)
+
     }
 }
 
