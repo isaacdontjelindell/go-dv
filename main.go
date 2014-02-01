@@ -8,17 +8,6 @@ import (
     "strconv"
 )
 
-type Node struct {
-    name string
-    route string
-    totalCost int // int cost + (cost to route)
-}
-
-type Update struct {
-    routingTable []Node
-    from string
-}
-
 func main() {
     // get this station name and neighbor/cost
     /*print("Enter this station name: ")

@@ -21,3 +21,16 @@ func readLines(path string) ([]string, error) {
     }
     return lines, scanner.Err()
 }
+
+
+type Node struct {
+    Name string
+    Route string
+    TotalCost int // int cost + (cost to route)
+}
+
+type Update struct {
+    RoutingTable []Node
+    From string
+}
+
