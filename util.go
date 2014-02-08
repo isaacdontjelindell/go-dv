@@ -76,9 +76,9 @@ func testClient() {
 
 		// build a test update struct
 		testRoutingTable := []Node{
-			Node{"t1", "yoda", 3},
+			Node{"t1", "yoda", 2},
 			Node{"t2", "yoda", 5},
-			Node{"t3", "yoda", 7},
+			Node{"t3", "yoda", 6},
 		}
 		update := Update{testRoutingTable, "yoda"}
 
