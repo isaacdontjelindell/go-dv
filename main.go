@@ -27,7 +27,7 @@ func main() {
 	}
 	fmt.Println("neighborCount:", neighborCount)
 
-	neighbors := make([]Node, 0)
+	neighbors := make(map[string]Node)
 	for i := 2; i < neighborCount*2+1; i += 2 {
 		name := configLines[i]
 		costStr := configLines[i+1]
@@ -38,11 +38,11 @@ func main() {
 			os.Exit(1)
 		}
 
-		fmt.Printf("Neighbor: %s, Cost: %d\n", name, cost)
+		//fmt.Printf("Neighbor: %s, Cost: %d\n", name, cost)
 
 		n := Node{name, "_self", cost}
 
-		neighbors = append(neighbors, n)
+		neighbors[name] = n
 	}
 	println("")
 
@@ -54,7 +54,7 @@ func main() {
 	updateChan := make(chan Update)
 
 	// set up the threads
-	go maintainRoutingTable(quit, updateChan, routingTable)
+	go maintainRoutingTable(quit, updateChan, routingTable, neighbors)
 	go acceptUpdates(quit, updateChan)
 
 	go testClient() // TODO remove
@@ -62,14 +62,52 @@ func main() {
 	<-quit // blocks
 }
 
-func maintainRoutingTable(quit chan int, updateChan chan Update, routingTable RoutingTable) {
+func maintainRoutingTable(quit chan int, updateChan chan Update, routingTable RoutingTable, neighbors map[string]Node) {
 	fmt.Println("[maintainRoutingTable] Initial routing table:")
 	fmt.Println(routingTable)
 
 	for {
-		update := <-updateChan
-		fmt.Println("[maintainRoutingTable] processing an update...")
-		fmt.Println(update)
+		update := <-updateChan // wait for updates
+
+		fmt.Printf("[maintainRoutingTable] processing an update. From: %s\n", update.From)
+		updated := false // keep track if this update caused changes in the routing table
+
+		for _, newNode := range update.RoutingTable {
+			from := update.From // TODO verify that from is actually in the neighbor list
+			routeCost := neighbors[from].Cost
+
+			newName := newNode.Name
+			newCost := newNode.Cost + routeCost
+
+			// check if newNode is in our current routing table
+			node, present := routingTable.Table[newName]
+			if present {
+				// if it is, check cost
+				cost := node.Cost // what we have now
+
+				if newCost < cost {
+					node.Cost = newCost
+					node.Route = from
+					routingTable.Table[newName] = node // update table w/ updated node
+					updated = true
+				} else {
+					// if the cost we got in the update is more, ignore it
+				}
+			} else {
+				// if newNode isn't in the current routing table, add it
+				newNode.Cost = newCost
+				newNode.Route = from
+				routingTable.Table[newName] = node // update table w/ newly discovered station
+				updated = true
+			}
+		}
+
+		if updated {
+			fmt.Printf("[maintainRoutingTable] Updated routing table:\n")
+			fmt.Println(routingTable)
+		} else {
+			fmt.Printf("[maintainRoutingTable] No changes due to update from %s\n\n", update.From)
+		}
 	}
 
 	quit <- -1

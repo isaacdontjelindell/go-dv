@@ -27,13 +27,13 @@ func readLines(path string) ([]string, error) {
 }
 
 type Node struct {
-	Name      string
-	Route     string
-	TotalCost int // int cost + (cost to route)
+	Name  string
+	Route string
+	Cost  int
 }
 
 func (n Node) String() string {
-	return fmt.Sprintf("Name: %s, Route: %s, Cost: %d", n.Name, n.Route, n.TotalCost)
+	return fmt.Sprintf("Name: %s, Route: %s, Cost: %d", n.Name, n.Route, n.Cost)
 }
 
 type Update struct {
@@ -52,13 +52,14 @@ func (u Update) String() string {
 }
 
 type RoutingTable struct {
-	Table []Node
+	Table map[string]Node
 	Self  string
 }
 
 func (r RoutingTable) String() string {
 	var s string
-	s = fmt.Sprintf("Routing Table - %s\n", r.Self)
+	s = fmt.Sprintf("Routing table for: %s\n", r.Self)
+
 	for _, val := range r.Table {
 		s += fmt.Sprintf("%s\n", val)
 	}
@@ -76,9 +77,9 @@ func testClient() {
 
 		// build a test update struct
 		testRoutingTable := []Node{
-			Node{"t1", "yoda", 2},
-			Node{"t2", "yoda", 5},
-			Node{"t3", "yoda", 6},
+			Node{"t1", "bob", 3},
+			Node{"t2", "bob", 5},
+			Node{"t3", "bob", 6},
 		}
 		update := Update{testRoutingTable, "yoda"}
 
