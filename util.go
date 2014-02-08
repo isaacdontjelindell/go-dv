@@ -2,11 +2,11 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"net"
 	"os"
-    "net"
-    "time"
-    "encoding/json"
+	"time"
 )
 
 // readLines reads a whole file into memory
@@ -51,6 +51,19 @@ func (u Update) String() string {
 	return s
 }
 
+type RoutingTable struct {
+	Table []Node
+	Self  string
+}
+
+func (r RoutingTable) String() string {
+	var s string
+	s = fmt.Sprintf("Routing Table - %s\n", r.Self)
+	for _, val := range r.Table {
+		s += fmt.Sprintf("%s\n", val)
+	}
+	return s
+}
 
 func testClient() {
 	conn, err := net.Dial("udp", "127.0.0.1:1337")

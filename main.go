@@ -40,18 +40,21 @@ func main() {
 
 		fmt.Printf("Neighbor: %s, Cost: %d\n", name, cost)
 
-		n := Node{name, "", cost}
+		n := Node{name, "_self", cost}
 
 		neighbors = append(neighbors, n)
 	}
 	println("")
 
-	// set up the threads
-	quit := make(chan int)
+	// the initial routing table is just the neighbor list
+	routingTable := RoutingTable{neighbors, station}
 
+	// set up the channels
+	quit := make(chan int)
 	updateChan := make(chan Update)
 
-	go maintainRoutingTable(quit, updateChan, neighbors)
+	// set up the threads
+	go maintainRoutingTable(quit, updateChan, routingTable)
 	go acceptUpdates(quit, updateChan)
 
 	go testClient() // TODO remove
@@ -59,9 +62,9 @@ func main() {
 	<-quit // blocks
 }
 
-func maintainRoutingTable(quit chan int, updateChan chan Update, initialTable []Node) {
-	routingTable := make([]Node, 0)
-	routingTable = append(routingTable, initialTable...)
+func maintainRoutingTable(quit chan int, updateChan chan Update, routingTable RoutingTable) {
+	fmt.Println("[maintainRoutingTable] Initial routing table:")
+	fmt.Println(routingTable)
 
 	for {
 		update := <-updateChan
