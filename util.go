@@ -37,7 +37,7 @@ func (n Node) String() string {
 }
 
 type Update struct {
-	RoutingTable []Node
+	RoutingTable map[string]Node
 	From         string
 }
 
@@ -76,11 +76,11 @@ func testClient() {
 		time.Sleep(time.Second * 2)
 
 		// build a test update struct
-		testRoutingTable := []Node{
-			Node{"t1", "bob", 3},
-			Node{"t2", "bob", 5},
-			Node{"t3", "bob", 6},
-		}
+        testRoutingTable := make(map[string]Node)
+        testRoutingTable["t1"] = Node{"t1", "bob", 3}
+        testRoutingTable["t2"] = Node{"t2", "joe", 5}
+        testRoutingTable["t3"] = Node{"t3", "dan", 6}
+
 		update := Update{testRoutingTable, "yoda"}
 
 		u, err := json.Marshal(update) // u is []byte

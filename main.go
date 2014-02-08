@@ -38,8 +38,6 @@ func main() {
 			os.Exit(1)
 		}
 
-		//fmt.Printf("Neighbor: %s, Cost: %d\n", name, cost)
-
 		n := Node{name, "_self", cost}
 
 		neighbors[name] = n
