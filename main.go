@@ -74,8 +74,14 @@ func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateC
 		fmt.Printf("[maintainRoutingTable] processing an update. From: %s\n", update.From)
 		updated := false // keep track if this update caused changes in the routing table
 
-		for _, newNode := range update.RoutingTable {
+		for name, newNode := range update.RoutingTable {
+            fmt.Printf("Got one: %s\n", name)
 			from := update.From // TODO verify that from is actually in the neighbor list
+            _, ok := neighbors[from]
+            if ok != true {
+                fmt.Printf("[maintainRoutingTable] got an update from a stranger!\n")
+                continue
+            }
 			routeCost := neighbors[from].Cost
 
 			newName := newNode.Name
@@ -138,6 +144,7 @@ func sendUpdates(quit chan int, updateChan chan RoutingTable, neighbors map[stri
         default:
             time.Sleep(time.Second * 2)
             fmt.Println("[sendUpdates] sending updated routing table to neighbors")
+            fmt.Println(routingTable)
             update := Update{routingTable.Table, routingTable.Self}
 
             u, err := json.Marshal(update)
