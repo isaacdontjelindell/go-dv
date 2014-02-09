@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+    "time"
 )
 
 func main() {
@@ -49,18 +50,21 @@ func main() {
 
 	// set up the channels
 	quit := make(chan int)
-	updateChan := make(chan Update)
+	updateChan := make(chan Update)  // handle incoming updates
+    outgoingUpdateChan := make(chan RoutingTable)  // handle sending RoutingTable to neighbors
 
 	// set up the threads
-	go maintainRoutingTable(quit, updateChan, routingTable, neighbors)
+	go maintainRoutingTable(quit, updateChan, outgoingUpdateChan, routingTable, neighbors)
 	go acceptUpdates(quit, updateChan)
+    go sendUpdates(quit, outgoingUpdateChan, neighbors)
+    outgoingUpdateChan <- routingTable
 
-	go testClient() // TODO remove
+	//go testClient() // TODO remove
 
 	<-quit // blocks
 }
 
-func maintainRoutingTable(quit chan int, updateChan chan Update, routingTable RoutingTable, neighbors map[string]Node) {
+func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateChan chan RoutingTable, routingTable RoutingTable, neighbors map[string]Node) {
 	fmt.Println("[maintainRoutingTable] Initial routing table:")
 	fmt.Println(routingTable)
 
@@ -103,12 +107,52 @@ func maintainRoutingTable(quit chan int, updateChan chan Update, routingTable Ro
 		if updated {
 			fmt.Printf("[maintainRoutingTable] Updated routing table:\n")
 			fmt.Println(routingTable)
+
+            // send an update to neighbors
+            outgoingUpdateChan <- routingTable
+
 		} else {
 			fmt.Printf("[maintainRoutingTable] No changes due to update from %s\n\n", update.From)
 		}
 	}
 
 	quit <- -1
+}
+
+func sendUpdates(quit chan int, updateChan chan RoutingTable, neighbors map[string]Node) {
+    fmt.Println("[sendUpdates] starting sendUpdates")
+
+    connections := make(map[string]net.Conn)
+    for name, _ := range(neighbors) {
+        conn, err := net.Dial("udp", name + ":1337")
+        if err != nil {
+            fmt.Println("[sendUpdates] Error dialing connection.", err.Error())
+        }
+        connections[name] = conn
+    }
+
+    routingTable := <-updateChan
+    for {
+        select {
+        case routingTable = <-updateChan:
+        default:
+            time.Sleep(time.Second * 2)
+            fmt.Println("[sendUpdates] sending updated routing table to neighbors")
+            update := Update{routingTable.Table, routingTable.Self}
+
+            u, err := json.Marshal(update)
+            if err != nil {
+                fmt.Println("[sendUpdates] error marshaling update to JSON", err.Error())
+            }
+
+            for _, conn := range connections {
+                conn.Write(u)
+            }
+        }
+
+    }
+
+    quit <- -1
 }
 
 func acceptUpdates(quit chan int, updateChan chan Update) {
