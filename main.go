@@ -71,42 +71,49 @@ func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateC
 	for {
 		update := <-updateChan // wait for updates
 
-		fmt.Printf("[maintainRoutingTable] processing an update. From: %s\n", update.From)
+		from := update.From
+
+		fmt.Printf("[maintainRoutingTable] processing an update. From: %s\n", from)
 		updated := false // keep track if this update caused changes in the routing table
 
+		_, ok := neighbors[from]
+		if ok != true {
+			fmt.Printf("[maintainRoutingTable] got an update from a stranger!\n")
+			continue
+		}
+
 		for name, newNode := range update.RoutingTable {
-			fmt.Printf("Got one: %s\n", name)
-			from := update.From 
-			_, ok := neighbors[from]
-			if ok != true {
-				fmt.Printf("[maintainRoutingTable] got an update from a stranger!\n")
+			// ignore entry for this host in recieved routing table
+			if name == routingTable.Self {
 				continue
-			}
-			routeCost := neighbors[from].Cost
-
-			newName := newNode.Name
-			newCost := newNode.Cost + routeCost
-
-			// check if newNode is in our current routing table
-			node, present := routingTable.Table[newName]
-			if present {
-				// if it is, check cost
-				cost := node.Cost // what we have now
-
-				if newCost < cost {
-					node.Cost = newCost
-					node.Route = from
-					routingTable.Table[newName] = node // update table w/ updated node
-					updated = true
-				} else {
-					// if the cost we got in the update is more, ignore it
-				}
 			} else {
-				// if newNode isn't in the current routing table, add it
-				newNode.Cost = newCost
-				newNode.Route = from
-				routingTable.Table[newName] = node // update table w/ newly discovered station
-				updated = true
+				routeCost := neighbors[from].Cost
+
+				newName := newNode.Name
+				newCost := newNode.Cost + routeCost
+
+				// check if newNode is in our current routing table
+				node, present := routingTable.Table[newName]
+				if present {
+					// if it is, check cost
+					cost := node.Cost // what we have now
+
+					if newCost < cost {
+						node.Cost = newCost
+						node.Route = from
+						routingTable.Table[newName] = node // update table w/ updated node
+						updated = true
+					} else {
+						// if the cost we got in the update is more, ignore it
+					}
+				} else {
+					// if newNode isn't in the current routing table, add it
+					newNode.Cost = newCost
+					newNode.Route = from
+					routingTable.Table[newName] = newNode // update table w/ newly discovered station
+					updated = true
+				}
+
 			}
 		}
 
@@ -130,7 +137,7 @@ func sendUpdates(quit chan int, updateChan chan RoutingTable, neighbors map[stri
 
 	connections := make(map[string]net.Conn)
 	for name, _ := range neighbors {
-        conn, err := net.Dial("udp", name + ":1337")
+		conn, err := net.Dial("udp", name+":1337")
 		if err != nil {
 			fmt.Println("[sendUpdates] Error dialing connection.", err.Error())
 		}
@@ -144,8 +151,8 @@ func sendUpdates(quit chan int, updateChan chan RoutingTable, neighbors map[stri
 		case routingTable = <-updateChan: // non-blocking
 		// send the update to all neighbors
 		default:
-			time.Sleep(time.Second * 2)
-			fmt.Println("[sendUpdates] sending updated routing table to neighbors")
+			time.Sleep(time.Second * 3)
+			fmt.Println("[sendUpdates] sending (possibly) updated routing table to neighbors")
 			fmt.Println(routingTable)
 			update := Update{routingTable.Table, routingTable.Self}
 
