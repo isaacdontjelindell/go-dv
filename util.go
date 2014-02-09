@@ -61,7 +61,7 @@ func (r RoutingTable) String() string {
 	s = fmt.Sprintf("Routing table for: %s\n", r.Self)
 
 	for _, val := range r.Table {
-		s += fmt.Sprintf("%s\n", val)
+		s += fmt.Sprintf("  %s\n", val)
 	}
 	return s
 }
@@ -76,10 +76,10 @@ func testClient() {
 		time.Sleep(time.Second * 2)
 
 		// build a test update struct
-        testRoutingTable := make(map[string]Node)
-        testRoutingTable["t1"] = Node{"t1", "bob", 3}
-        testRoutingTable["t2"] = Node{"t2", "joe", 5}
-        testRoutingTable["t3"] = Node{"t3", "dan", 6}
+		testRoutingTable := make(map[string]Node)
+		testRoutingTable["t1"] = Node{"t1", "bob", 3}
+		testRoutingTable["t2"] = Node{"t2", "joe", 5}
+		testRoutingTable["t3"] = Node{"t3", "dan", 6}
 
 		update := Update{testRoutingTable, "yoda"}
 
