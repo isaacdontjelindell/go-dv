@@ -159,7 +159,7 @@ func acceptUpdates(quit chan int, updateChan chan Update) {
 	fmt.Println("[acceptUpdates] starting listener")
 
 	// accept updates and pass them to maintainRoutingTable
-	LISTEN_IP := net.ParseIP("127.0.0.1")
+	LISTEN_IP := net.ParseIP("0.0.0.0")
 	LISTEN_PORT := 1337
 
 	listenAddr := net.UDPAddr{LISTEN_IP, LISTEN_PORT, ""}
