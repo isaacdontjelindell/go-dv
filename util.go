@@ -66,6 +66,16 @@ func (r RoutingTable) String() string {
 	return s
 }
 
+type Neighbor struct {
+    Host string
+    Cost int
+}
+
+type ConfigFile struct {
+    Station       string
+    Neighbors     []Neighbor
+}
+
 func testClient() {
 	conn, err := net.Dial("udp", "127.0.0.1:1337")
 	if err != nil {

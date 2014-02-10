@@ -1,0 +1,9 @@
+# Rename this file to conf.json, and update with correct station name 
+# and neighbor list
+{
+    "Station": "yoda.dynamic.luther.edu",
+    "Neighbors":[
+        {"Host": "ws4582.dynamic.luther.edu", "Cost": 3},
+        {"Host": "ws4581.dynamic.luther.edu", "Cost": 2}
+     ]
+}

@@ -5,39 +5,41 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strconv"
+    "strings"
 	"time"
 )
 
 func main() {
-	// get this station name and neighbor/cost
-	configLines, err := readLines("conf.ini")
+	// read in the conf file to get station info and neighbors
+	configLines, err := readLines("conf.json")
 	if err != nil {
 		fmt.Println("Error reading config file", err.Error())
 		os.Exit(1)
 	}
 
-	station := configLines[0]
+    // concat all lines into one string
+    var jsonString string
+    for _, s := range configLines {
+        // ignore comments
+        if string(s[0]) != "#" {
+            jsonString += strings.TrimSpace(s)
+        }
+    }
+
+    var conf ConfigFile
+    err = json.Unmarshal([]byte(jsonString), &conf)
+    if err != nil {
+        fmt.Println("Error parsing config file from JSON", err.Error())
+        os.Exit(1)
+    }
+
+	station := conf.Station
 	fmt.Println("Station:", station)
 
-	neighborCountStr := configLines[1]
-	neighborCount, err := strconv.Atoi(neighborCountStr)
-	if err != nil {
-		fmt.Println("Error converting neighborCost to int.", err.Error())
-		os.Exit(1)
-	}
-	fmt.Println("neighborCount:", neighborCount)
-
 	neighbors := make(map[string]Node)
-	for i := 2; i < neighborCount*2+1; i += 2 {
-		name := configLines[i]
-		costStr := configLines[i+1]
-
-		cost, err := strconv.Atoi(costStr)
-		if err != nil {
-			fmt.Println("Error converting cost to int.", err.Error())
-			os.Exit(1)
-		}
+    for _, neighbor := range conf.Neighbors {
+		name := neighbor.Host
+		cost := neighbor.Cost
 
 		n := Node{name, "_self", cost}
 
