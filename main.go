@@ -151,7 +151,6 @@ func sendUpdates(quit chan int, updateChan chan RoutingTable, neighbors map[stri
 		case routingTable = <-updateChan: // non-blocking
 		// send the update to all neighbors
 		default:
-			time.Sleep(time.Second * 3)
 			fmt.Println("[sendUpdates] sending (possibly) updated routing table to neighbors")
 			fmt.Println(routingTable)
 			update := Update{routingTable.Table, routingTable.Self}
@@ -164,6 +163,8 @@ func sendUpdates(quit chan int, updateChan chan RoutingTable, neighbors map[stri
 			for _, conn := range connections {
 				conn.Write(u)
 			}
+
+			time.Sleep(time.Second * 3)
 		}
 
 	}
