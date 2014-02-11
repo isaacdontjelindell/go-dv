@@ -129,8 +129,8 @@ func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateC
 			continue
 		}
 
-		// TODO reset timer for this neighbor
-		//neighborPurgeTimerMap[from].Reset(time.Second*10)
+		// reset timer for this neighbor
+		neighborPurgeTimerMap[from].Reset(time.Second*10)
 
 		for name, newNode := range update.RoutingTable {
 			// ignore entry for this host in recieved routing table
