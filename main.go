@@ -84,6 +84,9 @@ func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateC
 			continue
 		}
 
+        // TODO start a timer for this neighbor - if it's been too long since we've heard from them
+        // purge the routing table of the neighbor & any routes through that neighbor
+
 		for name, newNode := range update.RoutingTable {
 			// ignore entry for this host in recieved routing table
 			if name == routingTable.Self {
