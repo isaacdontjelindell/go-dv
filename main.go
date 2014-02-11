@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
-    "strings"
+	"strings"
 	"time"
 )
 
@@ -17,27 +17,27 @@ func main() {
 		os.Exit(1)
 	}
 
-    // concat all lines into one string
-    var jsonString string
-    for _, s := range configLines {
-        // ignore comments
-        if string(s[0]) != "#" {
-            jsonString += strings.TrimSpace(s)
-        }
-    }
+	// concat all lines into one string
+	var jsonString string
+	for _, s := range configLines {
+		// ignore comments
+		if string(s[0]) != "#" {
+			jsonString += strings.TrimSpace(s)
+		}
+	}
 
-    var conf ConfigFile
-    err = json.Unmarshal([]byte(jsonString), &conf)
-    if err != nil {
-        fmt.Println("Error parsing config file from JSON", err.Error())
-        os.Exit(1)
-    }
+	var conf ConfigFile
+	err = json.Unmarshal([]byte(jsonString), &conf)
+	if err != nil {
+		fmt.Println("Error parsing config file from JSON", err.Error())
+		os.Exit(1)
+	}
 
 	station := conf.Station
 	fmt.Println("Station:", station)
 
 	neighbors := make(map[string]Node)
-    for _, neighbor := range conf.Neighbors {
+	for _, neighbor := range conf.Neighbors {
 		name := neighbor.Host
 		cost := neighbor.Cost
 
@@ -45,7 +45,7 @@ func main() {
 
 		neighbors[name] = n
 	}
-	println("")
+	fmt.Println("")
 
 	// the initial routing table is just the neighbor list
 	routingTable := RoutingTable{neighbors, station}
@@ -66,11 +66,56 @@ func main() {
 	<-quit // blocks to keep main thread alive
 }
 
+func purgeRoutingTable(nameChan chan string, purgeChan chan RoutingTable, outgoingUpdateChan chan RoutingTable) {
+	fmt.Println("[purgeRoutingTable] starting purgeRoutingTable")
+
+	var name string
+	for {
+		name = <-nameChan
+		routingTable := <-purgeChan
+
+		fmt.Printf("[purgeRoutingTable] purging routes through %s\n", name)
+
+		// non-blocking in case maintainRoutingTable isn't ready to accept this update
+		select {
+		case purgeChan <- routingTable:
+			fmt.Println("[purgeRoutingTable] sent new table to maintainRoutingTable")
+		default:
+		}
+		outgoingUpdateChan <- routingTable // sendUpdates
+	}
+	fmt.Println("[purgeRoutingTable] end purgeRoutingTable")
+}
+
 func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateChan chan RoutingTable, routingTable RoutingTable, neighbors map[string]Node) {
 	fmt.Println("[maintainRoutingTable] Initial routing table:")
 	fmt.Println(routingTable)
 
+	// TODO start a timer for this neighbor - if it's been too long since we've heard from them
+	// purge the routing table of the neighbor & any routes through that neighbor
+	nameChan := make(chan string)
+	purgeChan := make(chan RoutingTable)
+	neighborPurgeTimerMap := make(map[string]*time.Timer)
+
+	go purgeRoutingTable(nameChan, purgeChan, outgoingUpdateChan)
+
+	for name, _ := range neighbors {
+		name := name
+		// create timer
+		t := time.AfterFunc(time.Second*10, func() {
+			nameChan <- name
+			purgeChan <- routingTable
+		})
+		neighborPurgeTimerMap[name] = t
+	}
+
 	for {
+		select {
+		case routingTable = <-purgeChan:
+			fmt.Println("[maintainRoutingTable] got a modified routingTable from purgeRoutingTable")
+		default:
+		}
+
 		update := <-updateChan // wait for updates
 
 		from := update.From
@@ -84,8 +129,8 @@ func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateC
 			continue
 		}
 
-        // TODO start a timer for this neighbor - if it's been too long since we've heard from them
-        // purge the routing table of the neighbor & any routes through that neighbor
+		// TODO reset timer for this neighbor
+		//neighborPurgeTimerMap[from].Reset(time.Second*10)
 
 		for name, newNode := range update.RoutingTable {
 			// ignore entry for this host in recieved routing table

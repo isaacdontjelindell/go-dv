@@ -67,13 +67,13 @@ func (r RoutingTable) String() string {
 }
 
 type Neighbor struct {
-    Host string
-    Cost int
+	Host string
+	Cost int
 }
 
 type ConfigFile struct {
-    Station       string
-    Neighbors     []Neighbor
+	Station   string
+	Neighbors []Neighbor
 }
 
 func testClient() {
