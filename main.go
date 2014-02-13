@@ -78,7 +78,7 @@ func purgeRoutingTable(nameChan chan string, purgeChan chan RoutingTable, outgoi
 
 		fmt.Printf("[purgeRoutingTable] **purging routes through %s**\n", name)
 
-        // TODO actually purge the routes!
+		// TODO actually purge the routes!
 
 		// non-blocking in case maintainRoutingTable isn't ready to accept this update
 		select {
