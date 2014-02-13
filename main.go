@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const TIMEOUT = time.Second * 5
+
 func main() {
 	// read in the conf file to get station info and neighbors
 	configLines, err := readLines("conf.json")
@@ -74,7 +76,9 @@ func purgeRoutingTable(nameChan chan string, purgeChan chan RoutingTable, outgoi
 		name = <-nameChan
 		routingTable := <-purgeChan
 
-		fmt.Printf("[purgeRoutingTable] purging routes through %s\n", name)
+		fmt.Printf("[purgeRoutingTable] **purging routes through %s**\n", name)
+
+        // TODO actually purge the routes!
 
 		// non-blocking in case maintainRoutingTable isn't ready to accept this update
 		select {
@@ -102,7 +106,7 @@ func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateC
 	for name, _ := range neighbors {
 		name := name
 		// create timer
-		t := time.AfterFunc(time.Second*10, func() {
+		t := time.AfterFunc(TIMEOUT, func() {
 			nameChan <- name
 			purgeChan <- routingTable
 		})
@@ -130,7 +134,7 @@ func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateC
 		}
 
 		// reset timer for this neighbor
-		neighborPurgeTimerMap[from].Reset(time.Second*10)
+		neighborPurgeTimerMap[from].Reset(TIMEOUT)
 
 		for name, newNode := range update.RoutingTable {
 			// ignore entry for this host in recieved routing table
