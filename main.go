@@ -71,14 +71,24 @@ func main() {
 func purgeRoutingTable(nameChan chan string, purgeChan chan RoutingTable, outgoingUpdateChan chan RoutingTable) {
 	fmt.Println("[purgeRoutingTable] starting purgeRoutingTable")
 
-	var name string
 	for {
-		name = <-nameChan
+        purgeName := <-nameChan
 		routingTable := <-purgeChan
 
-		fmt.Printf("[purgeRoutingTable] **purging routes through %s**\n", name)
+		fmt.Printf("[purgeRoutingTable] **purging routes through %s...**\n", purgeName)
 
-		// TODO actually purge the routes!
+        //fmt.Printf("[purgeRoutingTable] the current routing table is:\n")
+        //fmt.Println(routingTable)
+        for name, node := range routingTable.Table {
+            if name == purgeName {
+                delete(routingTable.Table, name)
+            } else if node.Route == purgeName {
+                delete(routingTable.Table, name)
+            }
+        }
+
+        fmt.Println("[purgeRoutingTable] routing table after purge is:")
+        fmt.Println(routingTable)
 
 		// non-blocking in case maintainRoutingTable isn't ready to accept this update
 		select {
@@ -95,7 +105,7 @@ func maintainRoutingTable(quit chan int, updateChan chan Update, outgoingUpdateC
 	fmt.Println("[maintainRoutingTable] Initial routing table:")
 	fmt.Println(routingTable)
 
-	// TODO start a timer for this neighbor - if it's been too long since we've heard from them
+	// start a timer for this neighbor - if it's been too long since we've heard from them
 	// purge the routing table of the neighbor & any routes through that neighbor
 	nameChan := make(chan string)
 	purgeChan := make(chan RoutingTable)
